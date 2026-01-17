@@ -1,47 +1,50 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Agent;
+use App\Repositories\Contracts\AgentRepositoryInterface;
+use App\Services\AgentService;
 use Illuminate\Http\Request;
 
+/**
+ * Agent API controller
+ * 
+ * Handles agent registration, heartbeat, and management via API
+ * 
+ * @package App\Http\Controllers\Api
+ */
 class AgentController extends Controller
 {
     /**
-     * Display a listing of agents.
+     * @param AgentRepositoryInterface $agentRepo Agent repository
+     * @param AgentService $agentService Agent service
+     */
+    public function __construct(
+        private AgentRepositoryInterface $agentRepo,
+        private AgentService $agentService
+    ) {
+    }
+
+    /**
+     * Display a listing of agents
      */
     public function index()
     {
-        $agents = Agent::with([
-            'metrics' => function ($q) {
-                $q->where('recorded_at', '>=', now()->subMinutes(5))
-                    ->latest('recorded_at');
-            }
-        ])
-            ->withCount('services')
-            ->orderBy('status')
-            ->orderBy('hostname')
-            ->get();
-
-        // Count agents offline for 5+ days
-        $offline_count = Agent::offlineForDays(5)->count();
+        $data = $this->agentService->getDashboardData();
 
         return response()->json([
             'success' => true,
-            'data' => $agents,
-            'summary' => [
-                'total' => $agents->count(),
-                'online' => $agents->where('status', 'online')->count(),
-                'offline' => $agents->where('status', 'offline')->count(),
-                'error' => $agents->where('status', 'error')->count(),
-                'offline_5_days' => $offline_count,
-            ]
+            'data' => $data['agents'],
+            'summary' => $data['stats'],
         ]);
     }
 
     /**
-     * Register a new agent with HWID-based authentication.
+     * Register a new agent
      */
     public function store(Request $request)
     {
@@ -58,52 +61,7 @@ class AgentController extends Controller
             'api_token' => 'required|string',
         ]);
 
-        // Check if agent already exists (by agent_id or hwid-hostname)
-        $agent = Agent::withTrashed()
-            ->where('agent_id', $validated['agent_id'])
-            ->orWhere(function ($q) use ($validated) {
-                $q->where('hwid', $validated['hwid'])
-                    ->where('hostname', $validated['hostname']);
-            })
-            ->first();
-
-        if ($agent) {
-            // Agent exists, restore if soft deleted
-            if ($agent->trashed()) {
-                $agent->restore();
-                logger()->info("Restoring soft-deleted agent: {$validated['agent_id']}");
-            }
-
-            // Update agent info
-            $agent->update([
-                'agent_id' => $validated['agent_id'],
-                'hwid' => $validated['hwid'],
-                'hostname' => $validated['hostname'],
-                'ip_address' => $validated['ip_address'],
-                'os_type' => $validated['os_type'],
-                'os_version' => $validated['os_version'],
-                'cpu_cores' => $validated['cpu_cores'],
-                'total_memory' => $validated['total_memory'],
-                'total_disk' => $validated['total_disk'],
-                'api_token' => $validated['api_token'],
-                'status' => 'online',
-                'last_seen_at' => now(),
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Agent re-registered successfully',
-                'data' => $agent,
-            ], 200);
-        }
-
-        // Create new agent
-        $agent = Agent::create([
-            ...$validated,
-            'status' => 'online',
-            'last_seen_at' => now(),
-            'registered_at' => now(),
-        ]);
+        $agent = $this->agentService->registerAgent($validated);
 
         return response()->json([
             'success' => true,
@@ -113,32 +71,20 @@ class AgentController extends Controller
     }
 
     /**
-     * Display the specified agent.
+     * Display the specified agent
      */
     public function show(Agent $agent)
     {
-        $agent->load([
-            'metrics' => function ($q) {
-                $q->where('recorded_at', '>=', now()->subHour())
-                    ->orderBy('recorded_at', 'desc');
-            },
-            'metricSnapshots' => function ($q) {
-                $q->where('snapshot_time', '>=', now()->subDay())
-                    ->orderBy('snapshot_time', 'desc');
-            },
-            'services' => function ($q) {
-                $q->latest('recorded_at');
-            }
-        ]);
+        $agentData = $this->agentService->getAgentDetails($agent->id);
 
         return response()->json([
             'success' => true,
-            'data' => $agent
+            'data' => $agentData
         ]);
     }
 
     /**
-     * Update agent heartbeat / keep-alive.
+     * Update agent heartbeat
      */
     public function heartbeat(Request $request)
     {
@@ -151,7 +97,7 @@ class AgentController extends Controller
             ], 401);
         }
 
-        $agent = Agent::where('api_token', $token)->first();
+        $agent = $this->agentRepo->findByApiToken($token);
 
         if (!$agent) {
             return response()->json([
@@ -160,30 +106,20 @@ class AgentController extends Controller
             ], 401);
         }
 
-        $agent->update([
-            'status' => 'online',
-            'last_seen_at' => now(),
-        ]);
+        $this->agentService->recordHeartbeat($agent);
 
         return response()->json([
             'success' => true,
             'message' => 'Heartbeat received',
-            'data' => [
-                'agent_id' => $agent->agent_id,
-                'hostname' => $agent->hostname,
-                'last_seen_at' => $agent->last_seen_at,
-            ]
         ]);
     }
 
     /**
-     * Get agents offline for 5+ days (candidates for deletion).
+     * Get agents offline for 5+ days
      */
     public function offlineAgents()
     {
-        $agents = Agent::offlineForDays(5)
-            ->orderBy('last_seen_at', 'asc')
-            ->get();
+        $agents = $this->agentRepo->getOfflineAgents(5);
 
         return response()->json([
             'success' => true,
@@ -193,26 +129,25 @@ class AgentController extends Controller
     }
 
     /**
-     * Soft delete agent (keep metrics history).
+     * Soft delete agent
      */
     public function destroy(Agent $agent)
     {
         $agentId = $agent->agent_id;
         $hostname = $agent->hostname;
 
-        // Soft delete - metrics history is preserved
-        $agent->delete();
+        $this->agentService->deleteAgent($agent->id);
 
         return response()->json([
             'success' => true,
-            'message' => "Agent '{$agentId}' ({$hostname}) has been deleted. Metrics history preserved."
+            'message' => "Agent '{$agentId}' ({$hostname}) has been deleted."
         ]);
     }
 
     /**
-     * Restore soft-deleted agent.
+     * Restore soft-deleted agent
      */
-    public function restore($id)
+    public function restore(int $id)
     {
         $agent = Agent::withTrashed()->findOrFail($id);
 

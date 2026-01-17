@@ -11,8 +11,8 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('services', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('agent_id')->constrained()->onDelete('cascade');
+            $table->uuid('id')->primary();
+            $table->uuid('agent_id');
             $table->string('name');
             $table->integer('pid');
             $table->enum('status', ['running', 'stopped'])->default('running');
@@ -26,6 +26,7 @@ return new class extends Migration {
             $table->timestamp('recorded_at')->useCurrent();
             $table->timestamps();
 
+            $table->foreign('agent_id')->references('id')->on('agents')->onDelete('cascade');
             // Indexes for quick lookups
             $table->index(['agent_id', 'status']);
             $table->index(['agent_id', 'recorded_at']);

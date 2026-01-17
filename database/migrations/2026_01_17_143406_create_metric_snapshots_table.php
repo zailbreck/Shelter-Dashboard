@@ -11,8 +11,8 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('metric_snapshots', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('agent_id')->constrained()->onDelete('cascade');
+            $table->uuid('id')->primary();
+            $table->uuid('agent_id');
             $table->enum('metric_type', ['cpu', 'memory', 'disk', 'network', 'io']);
             $table->decimal('avg_value', 10, 2);
             $table->decimal('min_value', 10, 2);
@@ -23,6 +23,7 @@ return new class extends Migration {
             $table->timestamp('snapshot_time');
             $table->timestamp('created_at')->useCurrent();
 
+            $table->foreign('agent_id')->references('id')->on('agents')->onDelete('cascade');
             // Composite unique to prevent duplicates
             $table->unique(['agent_id', 'metric_type', 'snapshot_period', 'snapshot_time'], 'snapshot_unique');
             $table->index(['agent_id', 'metric_type', 'snapshot_time']);

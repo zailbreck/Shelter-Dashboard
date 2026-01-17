@@ -1,45 +1,61 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
+use App\Services\AgentService;
 use App\Models\Agent;
 use Illuminate\Http\Request;
 
+/**
+ * Dashboard controller
+ * 
+ * Handles main dashboard and agent detail pages
+ * 
+ * @package App\Http\Controllers
+ */
 class DashboardController extends Controller
 {
+    /**
+     * @param AgentService $agentService Agent service
+     */
+    public function __construct(
+        private AgentService $agentService
+    ) {
+    }
+
+    /**
+     * Show dashboard with all agents
+     */
     public function index()
     {
-        $agents = Agent::withCount(['services'])
-            ->orderBy('status')
-            ->orderBy('hostname')
-            ->get();
+        $data = $this->agentService->getDashboardData();
 
-        // Get agents offline for 5+ days
-        $offline_agents = Agent::offlineForDays(5)->get();
-
-        return view('dashboard.index', compact('agents', 'offline_agents'));
+        return view('dashboard.index', $data);
     }
 
+    /**
+     * Show agent details
+     */
     public function show(Agent $agent)
     {
-        $agent->load([
-            'services' => function ($q) {
-                $q->latest('recorded_at')->limit(50);
-            }
-        ]);
+        $agentData = $this->agentService->getAgentDetails($agent->id);
 
-        return view('dashboard.show', compact('agent'));
+        return view('dashboard.show', ['agent' => $agentData]);
     }
 
+    /**
+     * Delete agent
+     */
     public function destroy(Agent $agent)
     {
-        $agent_id = $agent->agent_id;
+        $agentId = $agent->agent_id;
         $hostname = $agent->hostname;
 
-        // Soft delete
-        $agent->delete();
+        $this->agentService->deleteAgent($agent->id);
 
         return redirect()->route('dashboard')
-            ->with('success', "Agent {$agent_id} ({$hostname}) has been deleted. Metrics history preserved.");
+            ->with('success', "Agent {$agentId} ({$hostname}) has been deleted.");
     }
 }

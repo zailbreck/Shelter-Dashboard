@@ -11,14 +11,15 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('metrics', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('agent_id')->constrained()->onDelete('cascade');
+            $table->uuid('id')->primary();
+            $table->uuid('agent_id');
             $table->enum('metric_type', ['cpu', 'memory', 'disk', 'network', 'io']);
             $table->decimal('value', 10, 2);
             $table->string('unit', 20); // %, MB, GB, Mbps, etc.
             $table->timestamp('recorded_at')->useCurrent();
             $table->timestamp('created_at')->useCurrent();
 
+            $table->foreign('agent_id')->references('id')->on('agents')->onDelete('cascade');
             // Indexes for time-series queries
             $table->index(['agent_id', 'metric_type', 'recorded_at']);
             $table->index('recorded_at'); // For cleanup/archival queries

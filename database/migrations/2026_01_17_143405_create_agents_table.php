@@ -4,15 +4,14 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
         Schema::create('agents', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
             $table->string('hostname')->unique();
             $table->string('ip_address');
             $table->string('api_token', 64)->unique();
@@ -25,7 +24,7 @@ return new class extends Migration
             $table->timestamp('last_seen_at')->nullable();
             $table->timestamp('registered_at')->useCurrent();
             $table->timestamps();
-            
+
             // Indexes for better query performance
             $table->index('status');
             $table->index('last_seen_at');

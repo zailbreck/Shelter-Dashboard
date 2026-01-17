@@ -14,10 +14,10 @@
                     <div class="flex items-center space-x-3">
                         <h1 class="text-3xl font-bold text-gray-900">{{ $agent->hostname }}</h1>
                         <span class="px-3 py-1 text-sm font-medium rounded-full 
-                                @if($agent->status === 'online') bg-green-100 text-green-800
-                                @elseif($agent->status === 'offline') bg-gray-100 text-gray-800
-                                @else bg-yellow-100 text-yellow-800
-                                @endif">
+                                            @if($agent->status === 'online') bg-green-100 text-green-800
+                                            @elseif($agent->status === 'offline') bg-gray-100 text-gray-800
+                                            @else bg-yellow-100 text-yellow-800
+                                            @endif">
                             {{ ucfirst($agent->status) }}
                         </span>
                     </div>
@@ -171,7 +171,8 @@
         <!-- Services List -->
         <div class="bg-white rounded-lg shadow-sm border border-gray-200">
             <div class="px-6 py-4 border-b border-gray-200">
-                <h2 class="text-lg font-semibold text-gray-900">Running Services (Top 50)</h2>
+                <h2 class="text-lg font-semibold text-gray-900">Top 10 Resource-Intensive Processes</h2>
+                <p class="text-sm text-gray-500 mt-1">Sorted by combined CPU and memory usage (like htop)</p>
             </div>
 
             <div class="overflow-x-auto">
@@ -182,10 +183,10 @@
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">PID
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Status</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CPU %
                             </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                MEM %</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Memory MB</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User
@@ -201,20 +202,21 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{ $service->pid }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-2 py-1 text-xs font-medium rounded-full 
-                                                @if($service->status === 'running') bg-green-100 text-green-800
-                                                @else bg-gray-100 text-gray-800
-                                                @endif">
-                                        {{ $service->status }}
-                                    </span>
-                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     <div class="flex items-center">
                                         <span class="font-medium">{{ $service->cpu_percent }}%</span>
                                         <div class="ml-2 w-20 bg-gray-200 rounded-full h-2">
                                             <div class="bg-purple-600 h-2 rounded-full"
                                                 style="width: {{ min($service->cpu_percent, 100) }}%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <div class="flex items-center">
+                                        <span class="font-medium">{{ number_format($service->memory_percent, 1) }}%</span>
+                                        <div class="ml-2 w-20 bg-gray-200 rounded-full h-2">
+                                            <div class="bg-blue-600 h-2 rounded-full"
+                                                style="width: {{ min($service->memory_percent, 100) }}%"></div>
                                         </div>
                                     </div>
                                 </td>

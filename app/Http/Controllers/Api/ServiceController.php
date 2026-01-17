@@ -1,16 +1,33 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Agent;
-use App\Models\Service;
+use App\Repositories\Contracts\ServiceRepositoryInterface;
 use Illuminate\Http\Request;
 
+/**
+ * Service API controller
+ * 
+ * Handles service/process data via API
+ * 
+ * @package App\Http\Controllers\Api
+ */
 class ServiceController extends Controller
 {
     /**
-     * Store services data (batch).
+     * @param ServiceRepositoryInterface $serviceRepo Service repository
+     */
+    public function __construct(
+        private ServiceRepositoryInterface $serviceRepo
+    ) {
+    }
+
+    /**
+     * Store services data (batch)
      */
     public function store(Request $request)
     {
@@ -36,7 +53,6 @@ class ServiceController extends Controller
             'services' => 'required|array',
             'services.*.name' => 'required|string',
             'services.*.pid' => 'required|integer',
-            'services.*.status' => 'required|in:running,stopped',
             'services.*.cpu_percent' => 'nullable|numeric',
             'services.*.memory_percent' => 'nullable|numeric',
             'services.*.memory_mb' => 'nullable|numeric',
@@ -46,106 +62,41 @@ class ServiceController extends Controller
             'services.*.command' => 'nullable|string',
         ]);
 
-        // Delete old services for this agent to avoid duplicates
-        Service::where('agent_id', $agent->id)->delete();
-
-        $servicesData = [];
-        $now = now();
-
-        foreach ($validated['services'] as $service) {
-            $servicesData[] = [
-                'agent_id' => $agent->id,
-                'name' => $service['name'],
-                'pid' => $service['pid'],
-                'status' => $service['status'],
-                'cpu_percent' => $service['cpu_percent'] ?? 0,
-                'memory_percent' => $service['memory_percent'] ?? 0,
-                'memory_mb' => $service['memory_mb'] ?? 0,
-                'disk_read_mb' => $service['disk_read_mb'] ?? 0,
-                'disk_write_mb' => $service['disk_write_mb'] ?? 0,
-                'user' => $service['user'] ?? 'unknown',
-                'command' => $service['command'] ?? null,
-                'recorded_at' => $now,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ];
-        }
-
-        Service::insert($servicesData);
+        $this->serviceRepo->bulkUpsert($agent->id, $validated['services']);
 
         return response()->json([
             'success' => true,
             'message' => 'Services updated successfully',
-            'count' => count($servicesData)
+            'count' => count($validated['services'])
         ], 201);
     }
 
     /**
-     * Get services for a specific agent.
+     * Get services for a specific agent
      */
-    public function index(Request $request, $agentId)
+    public function index(int $agentId)
     {
         $agent = Agent::findOrFail($agentId);
-
-        $query = Service::where('agent_id', $agent->id);
-
-        // Filter by status
-        if ($request->has('status')) {
-            $query->where('status', $request->input('status'));
-        }
-
-        // Sort options
-        $sortBy = $request->input('sort_by', 'name'); // name, cpu_percent, memory_percent, memory_mb
-        $sortOrder = $request->input('sort_order', 'asc');
-
-        $query->orderBy($sortBy, $sortOrder);
-
-        $services = $query->get();
+        $services = $this->serviceRepo->getByAgent($agent->id);
 
         return response()->json([
             'success' => true,
-            'agent' => [
-                'id' => $agent->id,
-                'hostname' => $agent->hostname,
-            ],
-            'summary' => [
-                'total' => $services->count(),
-                'running' => $services->where('status', 'running')->count(),
-                'stopped' => $services->where('status', 'stopped')->count(),
-                'total_cpu_usage' => round($services->sum('cpu_percent'), 2),
-                'total_memory_mb' => $services->sum('memory_mb'),
-            ],
-            'services' => $services
+            'data' => $services,
+            'count' => $services->count()
         ]);
     }
 
     /**
-     * Get top services by resource usage.
+     * Get top services by resource usage
      */
-    public function top($agentId)
+    public function top(int $agentId)
     {
         $agent = Agent::findOrFail($agentId);
-
-        $topCpu = Service::where('agent_id', $agent->id)
-            ->where('status', 'running')
-            ->orderBy('cpu_percent', 'desc')
-            ->limit(10)
-            ->get();
-
-        $topMemory = Service::where('agent_id', $agent->id)
-            ->where('status', 'running')
-            ->orderBy('memory_mb', 'desc')
-            ->limit(10)
-            ->get();
+        $services = $this->serviceRepo->getTopByResource($agent->id, 10);
 
         return response()->json([
             'success' => true,
-            'agent' => [
-                'id' => $agent->id,
-                'hostname' => $agent->hostname,
-            ],
-            'top_cpu' => $topCpu,
-            'top_memory' => $topMemory,
+            'data' => $services
         ]);
     }
 }
