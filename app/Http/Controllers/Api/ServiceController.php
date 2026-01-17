@@ -74,7 +74,7 @@ class ServiceController extends Controller
     /**
      * Get services for a specific agent
      */
-    public function index(int $agentId)
+    public function index(string $agentId)
     {
         $agent = Agent::findOrFail($agentId);
         $services = $this->serviceRepo->getByAgent($agent->id);
@@ -89,7 +89,7 @@ class ServiceController extends Controller
     /**
      * Get top services by resource usage
      */
-    public function top(int $agentId)
+    public function top(string $agentId)
     {
         $agent = Agent::findOrFail($agentId);
         $services = $this->serviceRepo->getTopByResource($agent->id, 10);

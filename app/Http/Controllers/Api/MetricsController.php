@@ -59,7 +59,8 @@ class MetricsController extends Controller
             'metrics.*.unit' => 'sometimes|string',
         ]);
 
-        $this->metricsService->storeMetrics($agent, $validated['metrics']);
+        // Pass agent ID as string, not Agent model
+        $this->metricsService->storeMetrics($agent->id, $validated['metrics']);
 
         return response()->json([
             'success' => true,
@@ -71,7 +72,7 @@ class MetricsController extends Controller
     /**
      * Get realtime metrics for an agent
      */
-    public function realtime(int $agentId)
+    public function realtime(string $agentId)
     {
         $agent = Agent::findOrFail($agentId);
         $metrics = $this->metricsService->getRealtimeMetrics($agent);
@@ -85,7 +86,7 @@ class MetricsController extends Controller
     /**
      * Get historical metrics for charts
      */
-    public function show(int $agentId)
+    public function show(string $agentId)
     {
         $agent = Agent::findOrFail($agentId);
         $history = $this->metricsService->getHistoricalMetrics($agent);
@@ -99,7 +100,7 @@ class MetricsController extends Controller
     /**
      * Get recent snapshots
      */
-    public function snapshots(int $agentId)
+    public function snapshots(string $agentId)
     {
         $agent = Agent::findOrFail($agentId);
         $snapshot = $this->metricsRepo->getLatestSnapshot($agent->id);

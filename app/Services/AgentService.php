@@ -45,7 +45,7 @@ class AgentService
     /**
      * Get agent details with services
      * 
-     * @param int $agentId Agent ID
+     * @param string $agentId Agent ID
      * @return Agent|null Agent with relationships
      */
     public function getAgentDetails(string $agentId): ?Agent
@@ -88,7 +88,7 @@ class AgentService
     /**
      * Delete agent
      * 
-     * @param int $agentId Agent ID
+     * @param string $agentId Agent ID
      * @return bool Success status
      */
     public function deleteAgent(string $agentId): bool
