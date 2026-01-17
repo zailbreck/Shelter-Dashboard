@@ -97,6 +97,46 @@ class AgentService
     }
 
     /**
+     * Find agent by HWID (including soft-deleted)
+     * 
+     * @param string $hwid Hardware ID
+     * @param bool $withTrashed Include soft-deleted agents
+     * @return Agent|null Agent model
+     */
+    public function findByHwid(string $hwid, bool $withTrashed = false): ?Agent
+    {
+        $query = Agent::where('hwid', $hwid);
+
+        if ($withTrashed) {
+            $query->withTrashed();
+        }
+
+        return $query->first();
+    }
+
+    /**
+     * Create new agent
+     * 
+     * @param array $data Agent data
+     * @return Agent Created agent
+     */
+    public function createAgent(array $data): Agent
+    {
+        return $this->agentRepo->create([
+            'hostname' => $data['hostname'],
+            'ip_address' => $data['ip_address'],
+            'os_type' => $data['os_type'],
+            'os_version' => $data['os_version'],
+            'hwid' => $data['hwid'],
+            'cpu_cores' => $data['cpu_cores'] ?? null,
+            'total_memory_mb' => $data['total_memory_mb'] ?? null,
+            'total_disk_gb' => $data['total_disk_gb'] ?? null,
+            'status' => 'online',
+            'last_seen_at' => now(),
+        ]);
+    }
+
+    /**
      * Calculate agent statistics
      * 
      * @param Collection $agents Agent collection

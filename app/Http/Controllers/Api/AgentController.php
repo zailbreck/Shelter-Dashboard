@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Agent;
 use App\Repositories\Contracts\AgentRepositoryInterface;
 use App\Services\AgentService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
@@ -46,27 +47,56 @@ class AgentController extends Controller
     /**
      * Register a new agent
      */
-    public function store(Request $request)
+    public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'agent_id' => 'required|string',
-            'hwid' => 'required|string|max:16',
-            'hostname' => 'required|string',
+            'hostname' => 'required|string|max:255',
             'ip_address' => 'required|ip',
-            'os_type' => 'required|string',
-            'os_version' => 'required|string',
-            'cpu_cores' => 'required|integer|min:1',
-            'total_memory' => 'required|integer|min:1',
-            'total_disk' => 'required|integer|min:1',
-            'api_token' => 'required|string',
+            'os_type' => 'required|string|max:50',
+            'os_version' => 'required|string|max:100',
+            'hwid' => 'required|string|max:255',
+            'cpu_cores' => 'nullable|integer',
+            'total_memory_mb' => 'nullable|integer',
+            'total_disk_gb' => 'nullable|numeric',
         ]);
 
-        $agent = $this->agentService->registerAgent($validated);
+        // Check if agent with same HWID exists (including soft-deleted)
+        $existingAgent = $this->agentService->findByHwid($validated['hwid'], true);
+
+        if ($existingAgent) {
+            // If agent was soft-deleted, restore it
+            if ($existingAgent->trashed()) {
+                $existingAgent->restore();
+                $existingAgent->update([
+                    'hostname' => $validated['hostname'],
+                    'ip_address' => $validated['ip_address'],
+                    'last_seen_at' => now(),
+                ]);
+
+                return response()->json([
+                    'message' => 'Agent restored and re-registered successfully',
+                    'agent' => $existingAgent,
+                    'token' => $existingAgent->hwid,
+                ], 200);
+            }
+
+            // Agent exists and is active - update last seen
+            $existingAgent->update(['last_seen_at' => now()]);
+
+            return response()->json([
+                'message' => 'Agent already registered',
+                'agent' => $existingAgent,
+                'token' => $existingAgent->hwid,
+            ], 200);
+        }
+
+        // Create new agent
+        $agent = $this->agentService->createAgent($validated);
 
         return response()->json([
-            'success' => true,
             'message' => 'Agent registered successfully',
-            'data' => $agent,
+            'agent' => $agent,
+            'token' => $agent->hwid,
         ], 201);
     }
 
