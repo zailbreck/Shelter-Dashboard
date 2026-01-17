@@ -128,6 +128,7 @@ class AgentService
             'os_type' => $data['os_type'],
             'os_version' => $data['os_version'],
             'hwid' => $data['hwid'],
+            'api_token' => $data['api_token'] ?? null,
             'cpu_cores' => $data['cpu_cores'] ?? null,
             'total_memory_mb' => $data['total_memory_mb'] ?? null,
             'total_disk_gb' => $data['total_disk_gb'] ?? null,

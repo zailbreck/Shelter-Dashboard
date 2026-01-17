@@ -101,6 +101,7 @@ class AgentController extends Controller
             'os_type' => $validated['os_type'],
             'os_version' => $validated['os_version'],
             'hwid' => $validated['hwid'],
+            'api_token' => $validated['api_token'],
             'cpu_cores' => $validated['cpu_cores'],
             'total_memory_mb' => round($validated['total_memory'] / (1024 * 1024)), // Convert bytes to MB
             'total_disk_gb' => round($validated['total_disk'] / (1024 * 1024 * 1024)), // Convert bytes to GB
