@@ -22,6 +22,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\Ensure2FASetup::class,
         ]);
+
+        // Remove default Sanctum auth from API routes
+        // Agent API endpoints should be public (HWID-based auth in controllers)
+        $middleware->api(remove: [
+            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
