@@ -142,10 +142,10 @@
                                     <div class="flex items-center space-x-3">
                                         <h3 class="text-lg font-semibold text-gray-900">{{ $agent->hostname }}</h3>
                                         <span class="px-2 py-1 text-xs font-medium rounded-full 
-                                            @if($agent->status === 'online') bg-green-100 text-green-800
-                                            @elseif($agent->status === 'offline') bg-gray-100 text-gray-800
-                                            @else bg-yellow-100 text-yellow-800
-                                            @endif">
+                                                    @if($agent->status === 'online') bg-green-100 text-green-800
+                                                    @elseif($agent->status === 'offline') bg-gray-100 text-gray-800
+                                                    @else bg-yellow-100 text-yellow-800
+                                                    @endif">
                                             {{ ucfirst($agent->status) }}
                                         </span>
                                         @if($agent->isOfflineForDays(5))
@@ -227,7 +227,8 @@
                                             <h4 class="font-semibold text-gray-900">{{ $offline_agent->hostname }}</h4>
                                             <p class="text-sm text-gray-500 mt-1">{{ $offline_agent->agent_id }}</p>
                                             <p class="text-sm text-gray-500">Last seen:
-                                                {{ $offline_agent->last_seen_at?->diffForHumans() ?? 'Never' }}</p>
+                                                {{ $offline_agent->last_seen_at?->diffForHumans() ?? 'Never' }}
+                                            </p>
                                         </div>
                                         <form method="POST" action="{{ route('agent.delete', $offline_agent) }}"
                                             onsubmit="return confirm('Delete agent {{ $offline_agent->agent_id }}? Metrics history will be preserved.')">
@@ -263,11 +264,8 @@
 
                 init() {
                     console.log('Dashboard initialized');
-
-                    // Auto-refresh every 30 seconds
-                    setInterval(() => {
-                        window.location.reload();
-                    }, 30000);
+                    // Auto-refresh removed to prevent page growth bug
+                    // Users can manually refresh the page when needed
                 }
             }
         }

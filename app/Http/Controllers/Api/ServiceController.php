@@ -37,13 +37,13 @@ class ServiceController extends Controller
             'services.*.name' => 'required|string',
             'services.*.pid' => 'required|integer',
             'services.*.status' => 'required|in:running,stopped',
-            'services.*.cpu_percent' => 'sometimes|numeric',
-            'services.*.memory_percent' => 'sometimes|numeric',
-            'services.*.memory_mb' => 'sometimes|integer',
-            'services.*.disk_read_mb' => 'sometimes|numeric',
-            'services.*.disk_write_mb' => 'sometimes|numeric',
-            'services.*.user' => 'sometimes|string',
-            'services.*.command' => 'sometimes|string',
+            'services.*.cpu_percent' => 'nullable|numeric',
+            'services.*.memory_percent' => 'nullable|numeric',
+            'services.*.memory_mb' => 'nullable|numeric',
+            'services.*.disk_read_mb' => 'nullable|numeric',
+            'services.*.disk_write_mb' => 'nullable|numeric',
+            'services.*.user' => 'nullable|string',
+            'services.*.command' => 'nullable|string',
         ]);
 
         // Delete old services for this agent to avoid duplicates

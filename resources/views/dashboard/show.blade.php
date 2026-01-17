@@ -14,10 +14,10 @@
                     <div class="flex items-center space-x-3">
                         <h1 class="text-3xl font-bold text-gray-900">{{ $agent->hostname }}</h1>
                         <span class="px-3 py-1 text-sm font-medium rounded-full 
-                            @if($agent->status === 'online') bg-green-100 text-green-800
-                            @elseif($agent->status === 'offline') bg-gray-100 text-gray-800
-                            @else bg-yellow-100 text-yellow-800
-                            @endif">
+                                @if($agent->status === 'online') bg-green-100 text-green-800
+                                @elseif($agent->status === 'offline') bg-gray-100 text-gray-800
+                                @else bg-yellow-100 text-yellow-800
+                                @endif">
                             {{ ucfirst($agent->status) }}
                         </span>
                     </div>
@@ -60,7 +60,8 @@
                     <div>
                         <p class="text-sm text-gray-500">Total RAM</p>
                         <p class="text-2xl font-bold text-gray-900">
-                            {{ number_format($agent->total_memory / 1024 / 1024 / 1024, 1) }} GB</p>
+                            {{ number_format($agent->total_memory / 1024 / 1024 / 1024, 1) }} GB
+                        </p>
                     </div>
                 </div>
             </div>
@@ -76,7 +77,8 @@
                     <div>
                         <p class="text-sm text-gray-500">Total Disk</p>
                         <p class="text-2xl font-bold text-gray-900">
-                            {{ number_format($agent->total_disk / 1024 / 1024 / 1024, 0) }} GB</p>
+                            {{ number_format($agent->total_disk / 1024 / 1024 / 1024, 0) }} GB
+                        </p>
                     </div>
                 </div>
             </div>
@@ -136,25 +138,33 @@
             <!-- CPU Chart -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">CPU Usage (1 Hour)</h3>
-                <canvas id="cpuChart" height="200"></canvas>
+                <div style="height: 250px; position: relative;">
+                    <canvas id="cpuChart"></canvas>
+                </div>
             </div>
 
             <!-- Memory Chart -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Memory Usage (1 Hour)</h3>
-                <canvas id="memoryChart" height="200"></canvas>
+                <div style="height: 250px; position: relative;">
+                    <canvas id="memoryChart"></canvas>
+                </div>
             </div>
 
             <!-- Disk Chart -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Disk Usage (1 Hour)</h3>
-                <canvas id="diskChart" height="200"></canvas>
+                <div style="height: 250px; position: relative;">
+                    <canvas id="diskChart"></canvas>
+                </div>
             </div>
 
             <!-- Network Chart -->
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Network Traffic (1 Hour)</h3>
-                <canvas id="networkChart" height="200"></canvas>
+                <div style="height: 250px; position: relative;">
+                    <canvas id="networkChart"></canvas>
+                </div>
             </div>
         </div>
 
@@ -193,9 +203,9 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="px-2 py-1 text-xs font-medium rounded-full 
-                                        @if($service->status === 'running') bg-green-100 text-green-800
-                                        @else bg-gray-100 text-gray-800
-                                        @endif">
+                                                @if($service->status === 'running') bg-green-100 text-green-800
+                                                @else bg-gray-100 text-gray-800
+                                                @endif">
                                         {{ $service->status }}
                                     </span>
                                 </td>
@@ -318,7 +328,8 @@
                         },
                         options: {
                             responsive: true,
-                            maintainAspectRatio: false,
+                            maintainAspectRatio: true,
+                            aspectRatio: 2,
                             plugins: {
                                 legend: {
                                     display: false
@@ -339,6 +350,9 @@
                                         maxTicksLimit: 10
                                     }
                                 }
+                            },
+                            animation: {
+                                duration: 0
                             }
                         }
                     });
