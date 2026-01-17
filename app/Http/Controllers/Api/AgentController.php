@@ -50,14 +50,16 @@ class AgentController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
+            'agent_id' => 'required|string|max:255',
+            'hwid' => 'required|string|max:255',
             'hostname' => 'required|string|max:255',
             'ip_address' => 'required|ip',
             'os_type' => 'required|string|max:50',
-            'os_version' => 'required|string|max:100',
-            'hwid' => 'required|string|max:255',
-            'cpu_cores' => 'nullable|integer',
-            'total_memory_mb' => 'nullable|integer',
-            'total_disk_gb' => 'nullable|numeric',
+            'os_version' => 'required|string|max:255',
+            'cpu_cores' => 'required|integer',
+            'total_memory' => 'required|integer',
+            'total_disk' => 'required|integer',
+            'api_token' => 'required|string',
         ]);
 
         // Check if agent with same HWID exists (including soft-deleted)
@@ -74,9 +76,10 @@ class AgentController extends Controller
                 ]);
 
                 return response()->json([
+                    'success' => true,
                     'message' => 'Agent restored and re-registered successfully',
-                    'agent' => $existingAgent,
-                    'token' => $existingAgent->hwid,
+                    'agent_id' => $existingAgent->id,
+                    'api_token' => $validated['api_token'],
                 ], 200);
             }
 
@@ -84,19 +87,30 @@ class AgentController extends Controller
             $existingAgent->update(['last_seen_at' => now()]);
 
             return response()->json([
+                'success' => true,
                 'message' => 'Agent already registered',
-                'agent' => $existingAgent,
-                'token' => $existingAgent->hwid,
+                'agent_id' => $existingAgent->id,
+                'api_token' => $validated['api_token'],
             ], 200);
         }
 
         // Create new agent
-        $agent = $this->agentService->createAgent($validated);
+        $agent = $this->agentService->createAgent([
+            'hostname' => $validated['hostname'],
+            'ip_address' => $validated['ip_address'],
+            'os_type' => $validated['os_type'],
+            'os_version' => $validated['os_version'],
+            'hwid' => $validated['hwid'],
+            'cpu_cores' => $validated['cpu_cores'],
+            'total_memory_mb' => round($validated['total_memory'] / (1024 * 1024)), // Convert bytes to MB
+            'total_disk_gb' => round($validated['total_disk'] / (1024 * 1024 * 1024)), // Convert bytes to GB
+        ]);
 
         return response()->json([
+            'success' => true,
             'message' => 'Agent registered successfully',
-            'agent' => $agent,
-            'token' => $agent->hwid,
+            'agent_id' => $agent->id,
+            'api_token' => $validated['api_token'],
         ], 201);
     }
 
