@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="min-h-screen flex items-center justify-center px-4 py-12">
-        <div class="w-full max-w-2xl">
+        <div class="w-full max-w-5xl">
             <!-- Header -->
             <div class="text-center mb-8">
                 <div
@@ -19,7 +19,7 @@
             </div>
 
             <!-- Setup Card -->
-            <div class="backdrop-blur-lg bg-white/90 rounded-2xl shadow-2xl p-8">
+            <div class="backdrop-blur-lg bg-white/90 rounded-2xl shadow-2xl p-8 lg:p-12">
                 @if ($errors->any())
                     <div class="mb-6 bg-red-50 border border-red-200 text-red-800 rounded-lg p-4">
                         <ul class="list-disc list-inside text-sm">
@@ -30,28 +30,30 @@
                     </div>
                 @endif
 
-                <div class="grid md:grid-cols-2 gap-8">
+                <div class="grid md:grid-cols-2 gap-12 items-start">
                     <!-- QR Code Section -->
-                    <div class="text-center">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Step 1: Scan QR Code</h3>
-                        <p class="text-sm text-gray-600 mb-4">Use Google Authenticator, Authy, or any TOTP app</p>
+                    <div class="text-center flex flex-col items-center">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">Step 1: Scan QR Code</h3>
+                        <p class="text-sm text-gray-600 mb-6">Use Google Authenticator, Authy, or any TOTP app</p>
 
-                        <div class="bg-white p-4 rounded-lg inline-block border-2 border-gray-200">
-                            {!! $qrCode !!}
+                        <div class="bg-white p-4 md:p-6 rounded-lg border-2 border-gray-200 shadow-sm w-full max-w-xs">
+                            <div class="w-full aspect-square">
+                                {!! $qrCode !!}
+                            </div>
                         </div>
 
-                        <div class="mt-4 p-3 bg-gray-50 rounded-lg">
-                            <p class="text-xs text-gray-500 mb-1">Can't scan? Enter this code manually:</p>
+                        <div class="mt-6 p-4 bg-gray-50 rounded-lg w-full max-w-xs">
+                            <p class="text-xs text-gray-500 mb-2">Can't scan? Enter this code manually:</p>
                             <code class="text-sm font-mono font-semibold text-gray-900 break-all">{{ $secret }}</code>
                         </div>
                     </div>
 
                     <!-- Verification Section -->
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Step 2: Verify Code</h3>
+                    <div class="flex flex-col">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-3">Step 2: Verify Code</h3>
                         <p class="text-sm text-gray-600 mb-6">Enter the 6-digit code from your authenticator app</p>
 
-                        <form method="POST" action="{{ route('2fa.verify-setup') }}">
+                        <form method="POST" action="{{ route('2fa.verify-setup') }}" class="flex-1">
                             @csrf
 
                             <div class="mb-6">
@@ -85,6 +87,15 @@
             </div>
         </div>
     </div>
+
+    <style>
+        /* Make QR code SVG responsive */
+        .aspect-square svg {
+            width: 100% !important;
+            height: 100% !important;
+            max-width: 100%;
+        }
+    </style>
 
     <script>
         // Auto-submit when 6 digits entered

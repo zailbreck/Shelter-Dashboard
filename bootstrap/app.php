@@ -15,6 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // Register middleware aliases
         $middleware->alias([
             'require2fa' => \App\Http\Middleware\Require2FA::class,
+            'ensure2fa' => \App\Http\Middleware\Ensure2FASetup::class,
+        ]);
+
+        // Ensure web middleware includes CSRF protection
+        $middleware->web(append: [
+            \App\Http\Middleware\Ensure2FASetup::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

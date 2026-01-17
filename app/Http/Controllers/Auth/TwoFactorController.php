@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Services\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Two-factor authentication controller
@@ -46,13 +47,19 @@ class TwoFactorController extends Controller
             'code' => 'required|numeric|digits:6',
         ]);
 
-        $this->authService->enable2FA(
-            Auth::user(),
-            $validated['code']
-        );
+        $user = Auth::user();
 
-        return redirect()->route('dashboard')
-            ->with('success', '2FA has been enabled successfully!');
+        try {
+            $this->authService->enable2FA($user, $validated['code']);
+
+            // Mark user as requiring password change
+            $user->update(['password_change_required' => true]);
+
+            return redirect()->route('password.force-change')
+                ->with('success', '2FA enabled successfully! Please change your password.');
+        } catch (ValidationException $e) {
+            return back()->withErrors($e->errors());
+        }
     }
 
     /**

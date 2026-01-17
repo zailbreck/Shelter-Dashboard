@@ -42,7 +42,7 @@
                             </div>
                             <input type="email" name="email" id="email" value="{{ old('email') }}" required autofocus
                                 class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
-                                placeholder="admin@shelter.local">
+                                placeholder="Enter your email">
                         </div>
                     </div>
 
@@ -80,13 +80,7 @@
                     </button>
                 </form>
 
-                <!-- Info -->
-                <div class="mt-6 text-center">
-                    <p class="text-xs text-gray-500">
-                        Default credentials: <code class="bg-gray-100 px-2 py-1 rounded">admin@shelter.local</code> / <code
-                            class="bg-gray-100 px-2 py-1 rounded">Admin@123!</code>
-                    </p>
-                </div>
+
             </div>
 
             <!-- Footer -->

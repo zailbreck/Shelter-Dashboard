@@ -56,7 +56,7 @@ class AuthService
             ];
         }
 
-        // First time login - force 2FA setup
+        // First time login - redirect to 2FA setup (keep user authenticated)
         if (!$user->google2fa_enabled) {
             return [
                 'requires_setup' => true,

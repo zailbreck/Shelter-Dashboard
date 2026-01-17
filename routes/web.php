@@ -20,23 +20,32 @@ Route::middleware('web')->group(function () {
 
 // Authenticated routes
 Route::middleware(['auth'])->group(function () {
-    // 2FA setup (mandatory for new users)
-    Route::get('/2fa/setup', [TwoFactorController::class, 'showSetup'])->name('2fa.setup');
-    Route::post('/2fa/setup', [TwoFactorController::class, 'verifySetup'])->name('2fa.verify-setup');
+    // Force password change (before ensure2fa middleware)
+    Route::get('/password/force-change', [LoginController::class, 'showForcePasswordChange'])->name('password.force-change');
+    Route::post('/password/force-change', [LoginController::class, 'forcePasswordChange']);
 
-    // Routes that require 2FA to be enabled
-    Route::middleware('require2fa')->group(function () {
-        // Dashboard
-        Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-        Route::get('/agents/{agent}', [DashboardController::class, 'show'])->name('agent.show');
-        Route::delete('/agents/{agent}', [DashboardController::class, 'destroy'])->name('agent.delete');
+    // Apply ensure2fa to all other routes
+    Route::middleware('ensure2fa')->group(function () {
+        // 2FA setup (mandatory for new users) - excluded from ensure2fa check
+        Route::withoutMiddleware('ensure2fa')->group(function () {
+            Route::get('/2fa/setup', [TwoFactorController::class, 'showSetup'])->name('2fa.setup');
+            Route::post('/2fa/setup', [TwoFactorController::class, 'verifySetup'])->name('2fa.verify-setup');
+        });
 
-        // Settings
-        Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
-        Route::post('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
-        Route::post('/settings/password', [SettingsController::class, 'changePassword'])->name('settings.password');
-        Route::post('/settings/2fa/enable', [TwoFactorController::class, 'enable'])->name('2fa.enable');
-        Route::post('/settings/2fa/disable', [TwoFactorController::class, 'disable'])->name('2fa.disable');
+        // Routes that require 2FA to be enabled
+        Route::middleware('require2fa')->group(function () {
+            // Dashboard
+            Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+            Route::get('/agents/{agent}', [DashboardController::class, 'show'])->name('agent.show');
+            Route::delete('/agents/{agent}', [DashboardController::class, 'destroy'])->name('agent.delete');
+
+            // Settings
+            Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
+            Route::post('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
+            Route::post('/settings/password', [SettingsController::class, 'changePassword'])->name('settings.password');
+            Route::post('/settings/2fa/enable', [TwoFactorController::class, 'enable'])->name('2fa.enable');
+            Route::post('/settings/2fa/disable', [TwoFactorController::class, 'disable'])->name('2fa.disable');
+        });
     });
 
     // Logout (doesn't require 2FA)

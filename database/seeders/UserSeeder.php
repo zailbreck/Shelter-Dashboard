@@ -17,7 +17,7 @@ class UserSeeder extends Seeder
             ['email' => 'admin@shelter.local'],
             [
                 'name' => 'Administrator',
-                'password' => 'Admin@123!',
+                'password' => bcrypt('Admin@123!'),
                 'google2fa_enabled' => false,
             ]
         );

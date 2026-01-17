@@ -89,4 +89,38 @@ class LoginController extends Controller
 
         return redirect()->route('login');
     }
+
+    /**
+     * Show forced password change form
+     */
+    public function showForcePasswordChange()
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+
+        if (!$user->password_change_required) {
+            return redirect()->route('dashboard');
+        }
+
+        return view('auth.force-password-change');
+    }
+
+    /**
+     * Handle forced password change
+     */
+    public function forcePasswordChange(Request $request)
+    {
+        $validated = $request->validate([
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        $user = \Illuminate\Support\Facades\Auth::user();
+
+        $user->update([
+            'password' => \Illuminate\Support\Facades\Hash::make($validated['password']),
+            'password_change_required' => false,
+        ]);
+
+        return redirect()->route('dashboard')
+            ->with('success', 'Password changed successfully!');
+    }
 }
